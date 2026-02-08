@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>ALBRT AI – Modern Chat (Premium Beta + TTS + UI Fordító)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.css">
+
+<style>
+:root{
+  --bg:#070A12;
+  --panel:#0B1020;
+  --card:#0F172A;
+  --text:#E5E7EB;
+  --muted:#94A3B8;
+  --accent:#7C3AED;
+  --accent2:#4F46E5;
+  --user:#4F46E5;
+  --userText:#F8FAFC;
+  --border:rgba(255,255,255,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:radial-gradient(circle at 20% 0%, #1f2a50, #070A12 60%);
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  padding:18px;
+}
+
+.app{
+  width:100%;
+  max-width:1100px;
+  background:var(--panel);
+  border-radius:20px;
+  box-shadow:0 30px 90px rgba(0,0,0,.55);
+  display:grid;
+  grid-template-columns:320px 1fr;
+  overflow:hidden;
+}
+
+.sidebar{
+  background:linear-gradient(180deg,var(--accent2),var(--accent));
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  position:relative;
+  z-index:2;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  letter-spacing:.05em;
+}
+
+.brand .logo{
+  width:40px;height:40px;border-radius:999px;
+  background:radial-gradient(circle at 30% 0%, #EEF2FF, #4F46E5);
+  display:flex;align-items:center;justify-content:center;
+  color:#111827;font-weight:800;
+  box-shadow:0 0 20px rgba(191,219,254,.6);
+}
+
+.nav-btn{
+  width:100%;
+  border:none;
+  background:rgba(255,255,255,.12);
+  color:white;
+  padding:12px;
+  border-radius:14px;
+  text-align:left;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  transition:transform .1s, background .2s;
+  font-weight:600;
+}
+
+.nav-btn .material-icons{
+  font-size:18px;
+  color:white;
+}
+
+.nav-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.18)}
+.nav-btn.active{background:white;color:var(--accent2);font-weight:800}
+
+.main{
+  padding:18px;
+  background:#070A12;
+  display:flex;
+  flex-direction:column;
+}
+
+.view{display:none;flex-direction:column;height:100%}
+.view.active{display:flex}
+
+.chat-box{
+  flex:1;
+  background:var(--card);
+  border-radius:18px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+#chat{
+  flex:1;
+  padding:18px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.2) transparent;
+  position:relative;
+}
+
+#chat::-webkit-scrollbar{width:10px}
+#chat::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:999px}
+
+.msg{
+  max-width:78%;
+  padding:12px 14px;
+  border-radius:16px;
+  font-size:14px;
+  line-height:1.45;
+  position:relative;
+  animation:fadeIn .2s ease-out;
+}
+
+.user{
+  align-self:flex-end;
+  background:var(--user);
+  color:var(--userText);
+  border-bottom-right-radius:6px;
+}
+
+.bot{
+  align-self:flex-start;
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  border-bottom-left-radius:6px;
+}
+
+.system{
+  align-self:center;
+  background:rgba(255,255,255,.08);
+  color:var(--muted);
+  font-size:12px;
+  padding:10px 12px;
+  border-radius:999px;
+}
+
+.typing{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  opacity:.9;
+}
+
+.typing .pulse{
+  width:9px;height:9px;border-radius:999px;
+  background:rgba(255,255,255,.8);
+  animation:pulse 1s infinite;
+}
+.typing .pulse:nth-child(2){animation-delay:.2s}
+.typing .pulse:nth-child(3){animation-delay:.4s}
+
+@keyframes pulse{
+  0%,100%{transform:scale(.6);opacity:.2}
+  50%{transform:scale(1);opacity:1}
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.form{
+  display:flex;
+  gap:12px;
+  padding:16px;
+  border-top:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+}
+
+input{
+  flex:1;
+  border-radius:999px;
+  padding:14px 16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+  outline:none;
+}
+
+input:focus{border-color:var(--accent2);box-shadow:0 0 0 2px rgba(124,58,237,.25)}
+
+button{
+  border:none;
+  border-radius:999px;
+  padding:14px 16px;
+  background:linear-gradient(135deg, var(--accent2), var(--accent));
+  color:white;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+button.secondary{
+  background:rgba(255,255,255,.10);
+}
+
+.panel{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:16px;
+}
+
+label{
+  color:var(--muted);
+  font-size:12px;
+  display:block;
+}
+
+select,textarea{
+  width:100%;
+  margin-top:8px;
+  border-radius:12px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+}
+
+small{
+  display:block;
+  margin-top:8px;
+  color:var(--muted);
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+#toBottom{
+  position:fixed;
+  right:26px;
+  bottom:26px;
+  z-index:5;
+  border:none;
+  border-radius:999px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.12);
+  color:white;
+  cursor:pointer;
+  display:none;
+  align-items:center;
+  gap:10px;
+  backdrop-filter: blur(6px);
+}
+
+/* Modal (nyelvválasztó) */
+.modal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.65);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:10;
+}
+.modal-content{
+  background:var(--panel);
+  border-radius:18px;
+  padding:24px;
+  width:90%;
+  max-width:420px;
+  border:1px solid rgba(255,255,255,.12);
+}
+.modal-content h2{
+  margin-bottom:12px;
+  font-size:18px;
+}
+.modal-content select{
+  width:100%;
+}
+.modal-content button{
+  width:100%;
+  margin-top:12px;
+}
+
+/* Rendezettebb kapcsolók */
+.switch-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.switch-card{
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  border-radius:16px;
+  padding:12px;
+}
+
+/* ON/OFF switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+.switch input {display:none;}
+.slider {
+  position:absolute;
+  cursor:pointer;
+  top:0; left:0; right:0; bottom:0;
+  background:#ccc;
+  transition:.4s;
+  border-radius:34px;
+}
+.slider:before{
+  position:absolute;
+  content:"";
+  height:26px; width:26px;
+  left:4px; bottom:4px;
+  background:white;
+  transition:.4s;
+  border-radius:50%;
+}
+input:checked + .slider{
+  background:linear-gradient(135deg, var(--accent2), var(--accent));
+}
+input:checked + .slider:before{
+  transform:translateX(26px);
+}
+.switch-label{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-top:10px;
+}
+.switch-label span{
+  font-size:12px;
+  color:var(--muted);
+}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{flex-direction:row;overflow-x:auto;gap:8px}
+  .nav-btn{white-space:nowrap}
+  .row{grid-template-columns:1fr}
+  .switch-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">AI</div>
+    <div id="brandText">ALBRT</div>
+  </div>
+
+  <button class="nav-btn active" data-view="chat"><span class="material-icons">chat</span> <span class="nav-chat">Chat</span></button>
+  <button class="nav-btn" data-view="history"><span class="material-icons">history</span> <span class="nav-history">Előzmények</span></button>
+  <button class="nav-btn" data-view="models"><span class="material-icons">smart_toy</span> <span class="nav-models">Modellek</span></button>
+  <button class="nav-btn" data-view="settings"><span class="material-icons">settings</span> <span class="nav-settings">Beállítások</span></button>
+  <button class="nav-btn" data-view="stats"><span class="material-icons">bar_chart</span> <span class="nav-stats">Statisztika</span></button>
+  <button class="nav-btn" data-view="premium"><span class="material-icons">star</span> <span class="nav-premium">Premium Beta</span></button>
+  <button class="nav-btn" data-view="debug"><span class="material-icons">bug_report</span> <span class="nav-debug">Debug</span></button>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- CHAT -->
+<section class="view active" id="view-chat">
+  <div class="chat-box">
+    <div id="chat">
+      <div class="msg system" id="welcomeText">Üdv! Írj egy üzenetet. (Parancsok: <code>/reset</code> <code>/stats</code> <code>/lang xx</code>)</div>
+    </div>
+
+    <form class="form" id="form">
+      <input id="input" placeholder="Írj üzenetet..." autocomplete="off">
+      <button class="send" id="sendBtn">
+        <span class="material-icons">send</span> <span id="sendText">Küldés</span>
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- HISTORY -->
+<section class="view" id="view-history">
+  <div class="panel" id="historyBox"></div>
+</section>
+
+<!-- MODELS -->
+<section class="view" id="view-models">
+  <div class="panel">
+    <label id="modelLabel">Aktív modell</label>
+    <select id="modelSelect"></select>
+    <small id="modelSmall">Az AI "gondolkodási" ideje és válasz minősége változik.</small>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="view" id="view-settings">
+  <div class="panel">
+    <label id="settingsLabel">Általános beállítások</label>
+    
+    <div class="switch-grid">
+      <div class="switch-card">
+        <label id="ttsLabel">Hangos válasz (TTS)</label>
+        <label class="switch">
+          <input type="checkbox" id="ttsSwitch">
+          <span class="slider"></span>
+        </label>
+        <div class="switch-label"><span id="ttsOn">ON</span><span id="ttsOff">OFF</span></div>
+      </div>
+
+      <div class="switch-card">
+        <label id="newChatLabel">Új chat indítása</label>
+        <button id="newChat" class="secondary">Új chat</button>
+      </div>
+
+      <div class="switch-card">
+        <label id="premiumLabel">Premium Beta</label>
+        <label class="switch">
+          <input type="checkbox" id="premiumSwitch">
+          <span class="slider"></span>
+        </label>
+        <div class="switch-label"><span id="premiumOn">ON</span><span id="premiumOff">OFF</span></div>
+      </div>
+
+      <div class="switch-card">
+        <label id="langLabel">Fordítás cél nyelve</label>
+        <select id="langSelect">
+          <option value="hu">Magyar</option>
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="it">Italiano</option>
+          <option value="ru">Русский</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="zh-CN">中文 (简体)</option>
+          <option value="ar">العربية</option>
+        </select>
+        <small id="langSmall">Csak az UI fordítva (kérdés/válasz marad eredeti).</small>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="view" id="view-stats">
+  <div class="panel" id="statsBox"></div>
+</section>
+
+<!-- PREMIUM -->
+<section class="view" id="view-premium">
+  <div class="panel">
+    <label id="premiumLabel2">Premium Beta</label>
+    <div class="row">
+      <button id="togglePremium2" class="secondary">Premium ON/OFF</button>
+      <button id="premiumInfo" class="secondary">Mi a Premium?</button>
+    </div>
+    <small id="premiumSmall2">Premium beta funkciók: extra animáció, hangos válasz, gyorsabb modell váltás, prémium parancsok.</small>
+  </div>
+</section>
+
+<!-- DEBUG -->
+<section class="view" id="view-debug">
+  <div class="panel" id="debugBox"></div>
+</section>
+
+</main>
+</div>
+
+<button id="toBottom"><span class="material-icons">arrow_downward</span> <span id="scrollText">Legörgetés</span></button>
+
+<!-- Nyelvválasztó modal -->
+<div class="modal" id="langModal">
+  <div class="modal-content">
+    <h2 id="modalTitle">Válassz nyelvet</h2>
+    <select id="modalLang">
+      <option value="hu">Magyar</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+      <option value="it">Italiano</option>
+      <option value="ru">Русский</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="zh-CN">中文 (简体)</option>
+      <option value="ar">العربية</option>
+    </select>
+    <button id="modalSave">Mentés és folytatás</button>
+  </div>
+</div>
+
+<script>
+const chat=document.getElementById("chat");
+const input=document.getElementById("input");
+const form=document.getElementById("form");
+const historyBox=document.getElementById("historyBox");
+const statsBox=document.getElementById("statsBox");
+const debugBox=document.getElementById("debugBox");
+const modelSelect=document.getElementById("modelSelect");
+const sendBtn=document.getElementById("sendBtn");
+const toBottom=document.getElementById("toBottom");
+const ttsSwitch=document.getElementById("ttsSwitch");
+const premiumSwitch=document.getElementById("premiumSwitch");
+const newChat=document.getElementById("newChat");
+const premiumInfo=document.getElementById("premiumInfo");
+const langSelect=document.getElementById("langSelect");
+
+const langModal=document.getElementById("langModal");
+const modalLang=document.getElementById("modalLang");
+const modalSave=document.getElementById("modalSave");
+
+// UI elemek
+const brandText=document.getElementById("brandText");
+const navChat=document.querySelector(".nav-chat");
+const navHistory=document.querySelector(".nav-history");
+const navModels=document.querySelector(".nav-models");
+const navSettings=document.querySelector(".nav-settings");
+const navStats=document.querySelector(".nav-stats");
+const navPremium=document.querySelector(".nav-premium");
+const navDebug=document.querySelector(".nav-debug");
+const welcomeText=document.getElementById("welcomeText");
+const sendText=document.getElementById("sendText");
+const modelLabel=document.getElementById("modelLabel");
+const modelSmall=document.getElementById("modelSmall");
+const settingsLabel=document.getElementById("settingsLabel");
+const ttsLabel=document.getElementById("ttsLabel");
+const newChatLabel=document.getElementById("newChatLabel");
+const langLabel=document.getElementById("langLabel");
+const langSmall=document.getElementById("langSmall");
+const premiumLabel=document.getElementById("premiumLabel");
+const premiumSmall=document.getElementById("premiumSmall");
+const scrollText=document.getElementById("scrollText");
+const modalTitle=document.getElementById("modalTitle");
+const ttsOn=document.getElementById("ttsOn");
+const ttsOff=document.getElementById("ttsOff");
+const premiumOn=document.getElementById("premiumOn");
+const premiumOff=document.getElementById("premiumOff");
+
+let history=JSON.parse(localStorage.getItem("albrtHistory")||"[]");
+let stats=JSON.parse(localStorage.getItem("albrtStats")||JSON.stringify({messages:0,api:0}));
+let premium=JSON.parse(localStorage.getItem("albrtPremium")||"false");
+let tts=JSON.parse(localStorage.getItem("albrtTTS")||"false");
+let targetLang = localStorage.getItem("albrtLang") || "";
+
+// A bot válasz nyelve (alap: auto = a kérdés nyelve)
+let responseLang = localStorage.getItem("albrtResponseLang") || "auto";
+
+const models={
+ "Albrt 5.0 Fast":{delay:200,quality:1},
+ "Albrt 5.0":{delay:600,quality:1},
+ "Albrt 4.5 Fast":{delay:600,quality:0.9},
+ "Albrt 4.5":{delay:1200,quality:0.85},
+ "Albrt 4.0":{delay:1800,quality:0.8},
+ "Albrt 3.5":{delay:2600,quality:0.7},
+ "Albrt 3.0":{delay:3600,quality:0.6},
+ "Albrt 2.5":{delay:5000,quality:0.5}
+};
+
+Object.keys(models).forEach(m=>{
+  const o=document.createElement("option");
+  o.textContent=m;
+  modelSelect.appendChild(o);
+});
+
+// Fordító: Google publikus API (csak UI)
+async function translateText(text, target) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data[0].map(item => item[0]).join("");
+}
+
+function add(text,cls){
+  const d=document.createElement("div");
+  d.className="msg "+cls;
+  d.textContent=text;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+  return d;
+}
+
+function log(msg){
+  debugBox.innerHTML+=`<div>${new Date().toLocaleTimeString()} – ${msg}</div>`;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function typeText(el,text){
+  el.textContent="";
+  for(let c of text){
+    el.textContent+=c;
+    await sleep(12);
+  }
+}
+
+let abortController=null;
+
+// UI fordítás
+async function translateUI(){
+  brandText.textContent = await translateText("ALBRT", targetLang);
+  navChat.textContent = await translateText("Chat", targetLang);
+  navHistory.textContent = await translateText("Előzmények", targetLang);
+  navModels.textContent = await translateText("Modellek", targetLang);
+  navSettings.textContent = await translateText("Beállítások", targetLang);
+  navStats.textContent = await translateText("Statisztika", targetLang);
+  navPremium.textContent = await translateText("Premium Beta", targetLang);
+  navDebug.textContent = await translateText("Debug", targetLang);
+  welcomeText.innerHTML = await translateText("Üdv! Írj egy üzenetet. (Parancsok: /reset /stats /lang xx)", targetLang);
+  sendText.textContent = await translateText("Küldés", targetLang);
+  modelLabel.textContent = await translateText("Aktív modell", targetLang);
+  modelSmall.textContent = await translateText('Az AI "gondolkodási" ideje és válasz minősége változik.', targetLang);
+  settingsLabel.textContent = await translateText("Általános beállítások", targetLang);
+  ttsLabel.textContent = await translateText("Hangos válasz (TTS)", targetLang);
+  newChatLabel.textContent = await translateText("Új chat indítása", targetLang);
+  langLabel.textContent = await translateText("Fordítás cél nyelve", targetLang);
+  langSmall.textContent = await translateText("Csak az UI fordítva (kérdés/válasz marad eredeti).", targetLang);
+  premiumLabel.textContent = await translateText("Premium Beta", targetLang);
+  premiumSmall.textContent = await translateText("Premium beta funkciók: extra animáció, hangos válasz, gyorsabb modell váltás, prémium parancsok.", targetLang);
+  scrollText.textContent = await translateText("Legörgetés", targetLang);
+  modalTitle.textContent = await translateText("Válassz nyelvet", targetLang);
+  ttsOn.textContent = await translateText("ON", targetLang);
+  ttsOff.textContent = await translateText("OFF", targetLang);
+  premiumOn.textContent = await translateText("ON", targetLang);
+  premiumOff.textContent = await translateText("OFF", targetLang);
+}
+
+// switch állapot
+ttsSwitch.checked = tts;
+premiumSwitch.checked = premium;
+
+// TTS switch
+ttsSwitch.onchange = async () => {
+  tts = ttsSwitch.checked;
+  localStorage.setItem("albrtTTS", JSON.stringify(tts));
+  add(await translateText(tts ? "TTS bekapcsolva." : "TTS kikapcsolva.", targetLang), "system");
+};
+
+// Premium switch
+premiumSwitch.onchange = async () => {
+  premium = premiumSwitch.checked;
+  localStorage.setItem("albrtPremium", JSON.stringify(premium));
+  add(await translateText(premium ? "Premium Beta aktiválva." : "Premium Beta kikapcsolva.", targetLang), "system");
+};
+
+// Fordító cél nyelv
+langSelect.onchange = async () => {
+  targetLang = langSelect.value;
+  localStorage.setItem("albrtLang", targetLang);
+  await translateUI();
+};
+
+// Modal mentés
+modalSave.onclick = async () => {
+  targetLang = modalLang.value;
+  localStorage.setItem("albrtLang", targetLang);
+  langSelect.value = targetLang;
+  langModal.style.display = "none";
+  await translateUI();
+  add(await translateText("Nyelv beállítva: " + targetLang, targetLang), "system");
+};
+
+function isModelQuestion(text){
+  const q=text.toLowerCase();
+  return q.includes("melyik modell") || q.includes("melyik vagy") ||
+         q.includes("modell vagy") || (q.includes("albrt") && q.includes("melyik")) ||
+         q.includes("miben jobb") || q.includes("miben rosszabb") ||
+         q.includes("elődje") || q.includes("utódja");
+}
+
+function modelComparison(text){
+  const q=text.toLowerCase();
+  if(q.includes("4.5") && q.includes("5.0")) return "Az Albrt 5.0 gyorsabb és pontosabb, a 4.5 viszont kevesebb erőforrást használ és egyszerűbb feladatokra jó.";
+  if(q.includes("4.0") && q.includes("4.5")) return "A 4.5 több tudást és jobb nyelvi finomságot ad, míg a 4.0 gyorsabb és kevesebb kontextust használ.";
+  if(q.includes("3.0") && q.includes("4.0")) return "A 4.0 több részletet és logikát tud kezelni, a 3.0 inkább alap szintű válaszokra jó.";
+  return null;
+}
+
+function speak(text){
+  if(!tts) return;
+  const utter=new SpeechSynthesisUtterance(text);
+  utter.lang="hu-HU";
+  speechSynthesis.speak(utter);
+}
+
+function detectLang(text){
+  // egyszerű "nyelv felismerés" a promptból (nem 100% pontos)
+  if(text.match(/[а-яА-ЯЁё]/)) return "ru";
+  if(text.match(/[ㄱ-ㅎㅏ-ㅣ가-힣]/)) return "ko";
+  if(text.match(/[\u4e00-\u9fff]/)) return "zh-CN";
+  if(text.match(/[ぁ-んァ-ン]/)) return "ja";
+  if(text.match(/[éáőűíóúüö]/i)) return "hu";
+  return "en";
+}
+
+// model kérdés
+async function answerModelQuestion(prompt){
+  const model=modelSelect.value;
+  const reply = modelComparison(prompt) ||
+    `Én az ${model} vagyok. Az elődeim a 2.5–4.5 sorozat, az utódaim pedig a 5.0+ irányba fejlődnek. A nagyobb szám általában jobb pontosságot és jobb kontextuskezelést jelent, de több számítási időt is.`;
+
+  const bot=add("", "bot");
+  await typeText(bot, reply);
+  speak(reply);
+}
+
+async function ask(prompt){
+  const model=modelSelect.value;
+  const delay=models[model].delay;
+
+  if(isModelQuestion(prompt)){
+    await answerModelQuestion(prompt);
+    return;
+  }
+
+  const thinking=add("", "system");
+  thinking.innerHTML = `<div class="typing"><span class="pulse"></span><span class="pulse"></span><span class="pulse"></span> ${model} – ${await translateText("gondolkodik…", targetLang)}</div>`;
+
+  const cancelBtn=document.createElement("button");
+  cancelBtn.className="secondary";
+  cancelBtn.innerHTML='<span class="material-icons">cancel</span> ' + await translateText("Megszakítás", targetLang);
+  cancelBtn.onclick=()=>abortController?.abort();
+  sendBtn.replaceWith(cancelBtn);
+  cancelBtn.id="cancelBtn";
+
+  abortController=new AbortController();
+  await sleep(delay);
+
+  stats.api++;
+  log("API hívás");
+
+  try{
+    const r=await fetch("https://backend.buildpicoapps.com/aero/run/llm-api?pk=v1-Z0FBQUFBQm5IZkJDMlNyYUVUTjIyZVN3UWFNX3BFTU85SWpCM2NUMUk3T2dxejhLSzBhNWNMMXNzZlp3c09BSTR6YW1Sc1BmdGNTVk1GY0liT1RoWDZZX1lNZlZ0Z1dqd3c9PQ==",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ prompt: "Felhasználó: "+prompt + "\n\nVálasz nyelve: " + (responseLang === "auto" ? detectLang(prompt) : responseLang) }),
+      signal:abortController.signal
+    });
+
+    const j=await r.json();
+    thinking.remove();
+    cancelBtn.replaceWith(sendBtn);
+
+    const bot=add("", "bot");
+    await typeText(bot, j.text || "Hiba történt.");
+    speak(bot.textContent);
+
+    history.push({role:"bot",text:bot.textContent});
+    localStorage.setItem("albrtHistory", JSON.stringify(history));
+    localStorage.setItem("albrtStats", JSON.stringify(stats));
+
+  }catch(e){
+    thinking.remove();
+    cancelBtn.replaceWith(sendBtn);
+    add(await translateText("Megszakítva.", targetLang), "system");
+    log("Megszakítva");
+  }
+}
+
+form.onsubmit=async e=>{
+  e.preventDefault();
+  const t=input.value.trim();
+  if(!t)return;
+
+  // nyelv parancs
+  if(t.startsWith("/lang")){
+    const parts = t.split(" ");
+    if(parts[1]){
+      responseLang = parts[1];
+      localStorage.setItem("albrtResponseLang", responseLang);
+      add(await translateText("Válasz nyelv beállítva: " + responseLang, targetLang), "system");
+    } else {
+      add(await translateText("Használat: /lang hu /lang en /lang fr ...", targetLang), "system");
+    }
+    input.value="";
+    return;
+  }
+
+  if(t==="/reset"){
+    chat.innerHTML="";
+    add(await translateText("Chat törölve.", targetLang), "system");
+    history=[];
+    localStorage.setItem("albrtHistory", JSON.stringify(history));
+    return;
+  }
+  if(t==="/stats"){
+    add(await translateText(`Üzenetek: ${stats.messages} | API hívások: ${stats.api}`, targetLang), "system");
+    return;
+  }
+
+  add(t,"user");
+  history.push({role:"user",text:t});
+  stats.messages++;
+  input.value="";
+
+  await ask(t);
+};
+
+document.querySelectorAll(".nav-btn").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("view-"+b.dataset.view).classList.add("active");
+
+    if(b.dataset.view==="history"){
+      historyBox.innerHTML = history.map(h=>`<div><b>${h.role}:</b> ${h.text}</div>`).join("");
+    }
+    if(b.dataset.view==="stats"){
+      statsBox.innerHTML = `Üzenetek: ${stats.messages}<br>API hívások: ${stats.api}`;
+    }
+  };
+});
+
+// SCROLL TO BOTTOM + button
+let atBottom=true;
+chat.addEventListener("scroll", ()=>{
+  const tolerance=50;
+  atBottom = (chat.scrollHeight - chat.scrollTop - chat.clientHeight) < tolerance;
+  toBottom.style.display = atBottom ? "none" : "flex";
+});
+
+function scrollToBottom(){
+  chat.scrollTo({top:chat.scrollHeight,behavior:"smooth"});
+}
+toBottom.onclick=scrollToBottom;
+
+const observer = new MutationObserver(()=>{ if(atBottom) scrollToBottom(); });
+observer.observe(chat,{childList:true});
+
+// New chat
+newChat.onclick=async ()=>{
+  chat.innerHTML="";
+  add(await translateText("Új chat indítva.", targetLang), "system");
+  history=[];
+  localStorage.setItem("albrtHistory", JSON.stringify(history));
+};
+
+// Nyelvválasztó megjelenítése belépéskor
+window.onload = async () => {
+  if(!targetLang){
+    langModal.style.display = "flex";
+  } else {
+    langModal.style.display = "none";
+    langSelect.value = targetLang;
+    await translateUI();
+  }
+};
+</script>
+</body>
+</html>
